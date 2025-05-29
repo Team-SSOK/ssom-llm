@@ -52,13 +52,13 @@ async def analyze_logs(request: QuestionRequest):
         return QuestionResponse(
             isSuccess=True,
             code=2000,
-            message="로그 요약 성공했음 ㅋ",
+            message="로그 요약을 완료했습니다.",
             result=results)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/logs/github-issues", response_model=QuestionResponse)
+@app.post("/api/logs/issues", response_model=QuestionResponse)
 async def analyze_logs(request: QuestionRequest):
     try:
         # 프롬프트 타입 "log_summary" or "github_issue"
@@ -75,7 +75,7 @@ async def analyze_logs(request: QuestionRequest):
         return QuestionResponse(
             isSuccess=True,
             code=2000,
-            message="깃허브 이슈 작성 성공했음 ㅋ",
+            message="이슈 작성을 완료했습니다.",
             result=results)
 
     except Exception as e:
