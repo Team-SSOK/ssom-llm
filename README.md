@@ -59,5 +59,5 @@ docker-compose up -d
 ### 4. 서비스 중지
 
 ```bash
-docker-compose up -d
+docker-compose down
 ```
