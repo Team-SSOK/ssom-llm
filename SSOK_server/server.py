@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from embedding_service import embed_documents
 from rag_service import get_chain_and_retriever
-from logging_utils import log_relevant_docs
+from logging_utils import log_relevant_docs, log_llm_prompt
 from typing import List, Dict, Any
 
 # FastAPI 앱 생성
@@ -20,7 +20,7 @@ class EmbeddingRequest(BaseModel):
 
 # response 스키마
 class QuestionResponseItem(BaseModel):
-    log: Dict[str, Any]
+    log: List[Dict[str, Any]]
     message: dict
 
 class QuestionResponse(BaseModel):
@@ -31,7 +31,7 @@ class QuestionResponse(BaseModel):
 
 class EmbeddingResponse(BaseModel):
     isSuccess: bool
-    code: int
+    code: str
     message: str
 
 
@@ -43,18 +43,25 @@ async def analyze_logs(request: QuestionRequest):
         # 체인과 retriever 동시 획득
         chain, retriever = get_chain_and_retriever("log_summary")
 
-        tasks = [
-            process_log(chain, retriever, log)
-            for log in request.log
-        ]
+        # 1. 각 로그별로 N개씩 유사 코드 검색
+        all_relevant_docs = await get_relevant_docs_for_logs(retriever, request.log)
 
-        results = await asyncio.gather(*tasks)
+        # 2. context/question 딕셔너리 생성
+        inputs = build_chain_inputs(all_relevant_docs, request.log)
+
+        # 로그 출력
+        # log_relevant_docs(all_relevant_docs)
+        # log_llm_prompt(inputs["context"], inputs["question"])
+
+        # 3. 체인 실행
+        result = await asyncio.to_thread(chain.invoke, inputs)
 
         return QuestionResponse(
             isSuccess=True,
             code="2000",
             message="로그 요약을 완료했습니다.",
-            result=results)
+            result=[QuestionResponseItem(log=request.log, message=result.model_dump())]
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -66,18 +73,25 @@ async def analyze_logs(request: QuestionRequest):
         # 체인과 retriever 동시 획득
         chain, retriever = get_chain_and_retriever("github_issue")
 
-        tasks = [
-            process_log(chain, retriever, log)
-            for log in request.log
-        ]
+        # 1. 각 로그별로 N개씩 유사 코드 검색
+        all_relevant_docs = await get_relevant_docs_for_logs(retriever, request.log)
 
-        results = await asyncio.gather(*tasks)
+        # 2. context/question 딕셔너리 생성
+        inputs = build_chain_inputs(all_relevant_docs, request.log)
+
+        # 로그 출력
+        # log_relevant_docs(all_relevant_docs)
+        # log_llm_prompt(inputs["context"], inputs["question"])
+
+        # 3. 체인 실행
+        result = await asyncio.to_thread(chain.invoke, inputs)
 
         return QuestionResponse(
-            isSuccess=True,
-            code="2000",
-            message="이슈 작성을 완료했습니다.",
-            result=results)
+                isSuccess=True,
+                code="2000",
+                message="이슈 작성을 완료했습니다.",
+                result=[QuestionResponseItem(log=request.log, message=result.model_dump())]
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -98,15 +112,28 @@ async def embed_codes(request: EmbeddingRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-async def process_log(chain, retriever, log):
-    # Dict 형태의 로그를 JSON 문자열로 변환
-    log_str = json.dumps(log, ensure_ascii=False, indent=2)
 
-    # 관련 문서 검색 및 로깅
-    # relevant_docs = await asyncio.to_thread(retriever.invoke, log_str)
-    # log_relevant_docs(relevant_docs)
+async def get_relevant_docs_for_logs(retriever, logs: List[Dict[str, Any]]) -> List[Any]:
+    async def async_invoke(log):
+        log_str = json.dumps(log, ensure_ascii=False, indent=2)
+        # retriever.invoke를 비동기로 실행
+        return await asyncio.to_thread(retriever.invoke, log_str)
 
-    # 체인 실행
-    result = await asyncio.to_thread(chain.invoke, log_str)
+    # 각 로그에 대해 태스크 생성
+    tasks = [async_invoke(log) for log in logs]
+    results = await asyncio.gather(*tasks)
 
-    return QuestionResponseItem(log=log, message=result.model_dump())
+    # 결과를 List[List[문서]]로 반환
+    return [doc for sublist in results for doc in sublist]
+
+
+def build_chain_inputs(all_relevant_docs: List[Any], logs: List[Dict[str, Any]]) -> Dict[str, str]:
+    # 코드 내용 합치기
+    context_str = "\n\n---\n\n".join([doc.page_content for doc in all_relevant_docs])
+    # 로그 전체를 JSON 문자열로
+    log_str = json.dumps(logs, ensure_ascii=False, indent=2)
+
+    return {
+        "context": context_str,
+        "question": log_str
+    }

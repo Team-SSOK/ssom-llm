@@ -71,7 +71,7 @@ def get_chain_and_retriever(prompt_type: str):
 
     # 입력을 여러 체인(또는 함수)에 병렬로 전달
     setup_and_retrieval = RunnableParallel(
-        context=retriever,
+        context=lambda x: retriever.invoke(x["question"]),
         question=RunnablePassthrough()
     )
     # LCEL 체인 조립: 병렬 결과 → 프롬프트 → LLM
