@@ -1,30 +1,31 @@
 import traceback
 import asyncio
+import json
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from embedding_service import embed_documents
 from rag_service import get_chain_and_retriever
 from logging_utils import log_relevant_docs
-from typing import List
+from typing import List, Dict, Any
 
 # FastAPI 앱 생성
 app = FastAPI()
 
 # request 스키마
 class QuestionRequest(BaseModel):
-    log: List[str]
+    log: List[Dict[str, Any]]
 
 class EmbeddingRequest(BaseModel):
     github_url: str
 
 # response 스키마
 class QuestionResponseItem(BaseModel):
-    log: str
+    log: Dict[str, Any]
     message: dict
 
 class QuestionResponse(BaseModel):
     isSuccess: bool
-    code: int
+    code: str
     message: str
     result: List[QuestionResponseItem]
 
@@ -51,7 +52,7 @@ async def analyze_logs(request: QuestionRequest):
 
         return QuestionResponse(
             isSuccess=True,
-            code=2000,
+            code="2000",
             message="로그 요약을 완료했습니다.",
             result=results)
 
@@ -74,7 +75,7 @@ async def analyze_logs(request: QuestionRequest):
 
         return QuestionResponse(
             isSuccess=True,
-            code=2000,
+            code="2000",
             message="이슈 작성을 완료했습니다.",
             result=results)
 
@@ -89,7 +90,7 @@ async def embed_codes(request: EmbeddingRequest):
 
         return EmbeddingResponse(
             isSuccess=True,
-            code=2001,
+            code="2001",
             message=f"{request.github_url} 주소 코드의 임베딩을 완료했습니다."
         )
 
@@ -98,11 +99,14 @@ async def embed_codes(request: EmbeddingRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 async def process_log(chain, retriever, log):
+    # Dict 형태의 로그를 JSON 문자열로 변환
+    log_str = json.dumps(log, ensure_ascii=False, indent=2)
+
     # 관련 문서 검색 및 로깅
-    # relevant_docs = await asyncio.to_thread(retriever.invoke, log)
+    # relevant_docs = await asyncio.to_thread(retriever.invoke, log_str)
     # log_relevant_docs(relevant_docs)
 
     # 체인 실행
-    result = await asyncio.to_thread(chain.invoke, log)
+    result = await asyncio.to_thread(chain.invoke, log_str)
 
     return QuestionResponseItem(log=log, message=result.model_dump())
