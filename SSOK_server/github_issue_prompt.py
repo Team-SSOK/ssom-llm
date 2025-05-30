@@ -24,7 +24,7 @@ You are an expert DevOps engineer. Your task is to analyze the provided producti
   Example: "file": "AccountController.java", "function": "checkAccountBalance()"
 - "cause": Summarize the root cause. If not certain, start with "불명확" or "추정".
 - "reproduction_steps": List the steps to reproduce the issue as numbered bullet points.  
-  Example: ["1. 운영 환경에서 정상 계좌번호 사용", "2. /api/bank/account/balance API 호출"]
+  Example: ["1. 운영 환경에서 정상 계좌번호 사용", "2. /api/bank/account/balance API 호출", "3. 서버 콘솔에 에러 로그 출력 확인"]
 - "log": Include only the most essential error message(s) or stack trace(s), up to 2 lines.
 - "solution": Suggest a practical, actionable fix from an engineering perspective.
 - "references": Provide as a single string. If multiple, separate with commas. If none, write "없음".  
