@@ -13,6 +13,7 @@ COPY rag_service.py .
 COPY log_summary_prompt.py .
 COPY github_issue_prompt.py .
 COPY logging_utils.py .
+COPY exceptions.py .
 COPY requirements.txt .
 
 # github_repo 폴더 만들기

@@ -6,10 +6,12 @@ from pydantic import BaseModel
 from embedding_service import embed_documents
 from rag_service import get_chain_and_retriever
 from logging_utils import log_relevant_docs, log_llm_prompt
+from exceptions import CustomException, custom_exception_handler
 from typing import List, Dict, Any
 
 # FastAPI 앱 생성
 app = FastAPI()
+app.add_exception_handler(CustomException, custom_exception_handler)
 
 # request 스키마
 class QuestionRequest(BaseModel):
@@ -20,7 +22,6 @@ class EmbeddingRequest(BaseModel):
 
 # response 스키마
 class QuestionResponseItem(BaseModel):
-    log: List[Dict[str, Any]]
     message: dict
 
 class QuestionResponse(BaseModel):
@@ -60,11 +61,14 @@ async def analyze_logs(request: QuestionRequest):
             isSuccess=True,
             code="2000",
             message="로그 요약을 완료했습니다.",
-            result=[QuestionResponseItem(log=request.log, message=result.model_dump())]
+            result=[QuestionResponseItem(message=result.model_dump())]
         )
 
+    except ValueError as ve:
+        raise CustomException(code="4001", message=f"입력값 오류: {str(ve)}", status_code=400)
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise CustomException(code="5000", message=f"알 수 없는 오류: {str(e)}", status_code=500)
 
 @app.post("/api/logs/issues", response_model=QuestionResponse)
 async def analyze_logs(request: QuestionRequest):
@@ -90,11 +94,14 @@ async def analyze_logs(request: QuestionRequest):
                 isSuccess=True,
                 code="2000",
                 message="이슈 작성을 완료했습니다.",
-                result=[QuestionResponseItem(log=request.log, message=result.model_dump())]
+                result=[QuestionResponseItem(message=result.model_dump())]
         )
 
+    except ValueError as ve:
+        raise CustomException(code="4001", message=f"입력값 오류: {str(ve)}", status_code=400)
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise CustomException(code="5000", message=f"알 수 없는 오류: {str(e)}", status_code=500)
 
 # 임베딩 API
 @app.post("/api/codes/embedding", response_model=EmbeddingResponse)
