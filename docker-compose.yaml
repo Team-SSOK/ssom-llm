@@ -1,7 +1,7 @@
 services:
   qdrant:
     build:
-      context: ./SSOM_qdrant # 커스텀된 qdrant 이미지
+      context: ./ssom_qdrant # 커스텀된 qdrant 이미지
       dockerfile: Dockerfile
     container_name: qdrant
     ports:
@@ -17,9 +17,9 @@ services:
 
   fastapi-server:
     build:
-      context: ./SSOM_server
+      context: ./ssom_server
       dockerfile: Dockerfile
-    container_name: fastapi-server
+    container_name: ssom-llm
     ports:
       - "8000:8000"
     depends_on:
