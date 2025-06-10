@@ -18,7 +18,7 @@ app.add_exception_handler(CustomException, custom_exception_handler)
 load_dotenv()
 
 QDRANT_HOST = os.getenv("QDRANT_HOST")
-QDRANT_PORT = int(os.getenv("QDRANT_PORT"))
+QDRANT_PORT = int(os.getenv("QDRANT_PORT", "6333"))
 
 # 필수 값 검증
 if not QDRANT_HOST:
