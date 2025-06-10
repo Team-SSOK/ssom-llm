@@ -15,6 +15,7 @@ COPY github_issue_prompt.py .
 COPY logging_utils.py .
 COPY exceptions.py .
 COPY requirements.txt .
+COPY .env .
 
 # github_repo 폴더 만들기
 RUN mkdir -p github_repo
@@ -24,4 +25,3 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # 서버 실행
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]
-#CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"]
