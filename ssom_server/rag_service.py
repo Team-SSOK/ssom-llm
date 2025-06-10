@@ -13,12 +13,16 @@ from logging_utils import logger
 # 환경 변수 로드
 load_dotenv()
 
-# 필수 환경 변수 로딩
+# 필수 환경 변수
 OPENAI_API_KEY = str(os.getenv("OPENAI_API_KEY"))
+QDRANT_HOST = os.getenv("QDRANT_HOST")
+QDRANT_PORT = int(os.getenv("QDRANT_PORT", "6333"))
 
 # 필수 값 검증
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY가 .env에 설정되지 않음")
+if not QDRANT_HOST:
+    raise ValueError("QDRANT_HOST .env에 설정되지 않음")
 
 # 모델/설정 관련 환경 변수 로딩
 EMBEDDING_MODEL = str(os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"))
@@ -28,7 +32,7 @@ RETRIEVER_TOP_K = int(os.getenv("RETRIEVER_TOP_K", "3"))
 COLLECTION_NAME = str(os.getenv("COLLECTION_NAME", "java-files"))
 
 # Qdrant client 연결
-client = QdrantClient(host="qdrant", port=6333)
+client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
 
 if not client.collection_exists(COLLECTION_NAME):
     from qdrant_client.http.models import VectorParams, Distance

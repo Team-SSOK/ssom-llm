@@ -2,6 +2,7 @@ import traceback
 import asyncio
 import json
 from fastapi import FastAPI, HTTPException
+from fastapi_healthchecks import HealthcheckRouter, Probe
 from pydantic import BaseModel
 from embedding_service import embed_documents
 from rag_service import get_chain_and_retriever
@@ -12,6 +13,17 @@ from typing import List, Dict, Any
 # FastAPI 앱 생성
 app = FastAPI()
 app.add_exception_handler(CustomException, custom_exception_handler)
+
+# 환경 변수 로드
+load_dotenv()
+
+QDRANT_HOST = os.getenv("QDRANT_HOST")
+QDRANT_PORT = int(os.getenv("QDRANT_PORT"))
+
+# 필수 값 검증
+if not QDRANT_HOST:
+    raise ValueError("QDRANT_HOST .env에 설정되지 않음")
+
 
 # request 스키마
 class QuestionRequest(BaseModel):
@@ -35,6 +47,32 @@ class EmbeddingResponse(BaseModel):
     code: str
     message: str
 
+# Qdrant 연결 체크 함수
+async def qdrant_check():
+    try:
+        client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
+        client.get_collections()
+        return True
+    except Exception as e:
+        return False
+
+async def liveness_check():
+    return True
+
+# Healthcheck 라우터 설정
+app.include_router(
+    HealthcheckRouter(
+        Probe(
+            name="readiness",
+            checks=[qdrant_check],  # Qdrant DB 연결 체크
+        ),
+        Probe(
+            name="liveness",
+            checks=[liveness_check],  # 단순 생존 체크
+        ),
+    ),
+    prefix="/health"
+)
 
 # 질문 API
 @app.post("/api/logs/summary", response_model=QuestionResponse)

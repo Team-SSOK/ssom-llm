@@ -16,10 +16,15 @@ load_dotenv()
 
 # 필수 환경 변수
 OPENAI_API_KEY = str(os.getenv("OPENAI_API_KEY"))
+QDRANT_HOST = os.getenv("QDRANT_HOST")
+QDRANT_PORT = int(os.getenv("QDRANT_PORT", "6333"))
 
 # 필수 값 검증
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY가 .env에 설정되지 않음")
+if not QDRANT_HOST:
+    raise ValueError("QDRANT_HOST .env에 설정되지 않음")
+
 
 # 모델/설정 관련 환경 변수 로딩
 COLLECTION_NAME = str(os.getenv("COLLECTION_NAME", "java-files"))
@@ -68,7 +73,7 @@ def embed_documents(github_url: str):
     logger.info(f"{len(java_files)}개의 .java 파일을 찾음")
 
     # Qdrant 연결
-    qdrant = QdrantClient(host="qdrant", port=6333)
+    qdrant = QdrantClient(host=QDRANT_HOST, port=QDRANT_HOST)
 
     # 기존 컬렉션 삭제 및 재생성
     if qdrant.collection_exists(COLLECTION_NAME):
