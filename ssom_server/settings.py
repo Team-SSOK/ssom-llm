@@ -1,4 +1,5 @@
-from pydantic import BaseSettings, Field, ValidationError, field_validator
+from pydantic import Field, ValidationError, field_validator
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     openai_api_key: str = Field(..., env="OPENAI_API_KEY")
