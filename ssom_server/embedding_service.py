@@ -9,7 +9,7 @@ from langchain.docstore.document import Document
 from langchain_qdrant import QdrantVectorStore
 from langchain_openai import OpenAIEmbeddings
 from logging_utils import logger
-from ssom_server.settings import settings
+from settings import settings
 
 
 # 깃허브 URL에서 레포 이름 추출

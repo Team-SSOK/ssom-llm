@@ -7,7 +7,7 @@ from log_summary_prompt import get_prompt_template as get_log_prompt, get_output
 from github_issue_prompt import get_prompt_template as get_github_prompt, get_output_schema as get_github_schema
 
 from logging_utils import logger
-from ssom_server.settings import settings
+from settings import settings
 
 
 # Qdrant client 연결

@@ -10,7 +10,7 @@ from rag_service import get_chain_and_retriever
 from logging_utils import log_relevant_docs, log_llm_prompt
 from exceptions import CustomException, custom_exception_handler
 from typing import List, Dict, Any
-from ssom_server.settings import settings
+from settings import settings
 
 # FastAPI 앱 생성
 app = FastAPI()
