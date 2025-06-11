@@ -19,14 +19,14 @@ class Settings(BaseSettings):
     @classmethod
     def empty_string_as_default(cls, v, info):
         if v is None or (isinstance(v, str) and v.strip() == ""):
-            return info.field.default if info.field.default is not None else None
+            return info.default if info.default is not None else None
         return v
 
     @field_validator("openai_api_key", "qdrant_host", mode="before")
     @classmethod
     def required_env(cls, v, info):
         if v is None or (isinstance(v, str) and v.strip() == ""):
-            raise ValueError(f"필수 환경 변수 '{info.field.name}'가 누락되었습니다.")
+            raise ValueError(f"필수 환경 변수 '{info.field_name}'가 누락되었습니다.")
         return v
 
 try:
