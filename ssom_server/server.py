@@ -1,9 +1,12 @@
 import traceback
 import asyncio
 import json
-from fastapi import FastAPI, HTTPException
-from fastapi_healthchecks import HealthcheckRouter, Probe
+import os
+from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi_health import health
 from pydantic import BaseModel
+from qdrant_client import QdrantClient
 from embedding_service import embed_documents
 from rag_service import get_chain_and_retriever
 from logging_utils import log_relevant_docs, log_llm_prompt
@@ -48,31 +51,21 @@ class EmbeddingResponse(BaseModel):
     message: str
 
 # Qdrant 연결 체크 함수
-async def qdrant_check():
+async def readiness():
     try:
         client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
         client.get_collections()
         return True
     except Exception as e:
+        traceback.print_exc()
         return False
 
-async def liveness_check():
+async def liveness():
     return True
 
 # Healthcheck 라우터 설정
-app.include_router(
-    HealthcheckRouter(
-        Probe(
-            name="readiness",
-            checks=[qdrant_check],  # Qdrant DB 연결 체크
-        ),
-        Probe(
-            name="liveness",
-            checks=[liveness_check],  # 단순 생존 체크
-        ),
-    ),
-    prefix="/health"
-)
+app.add_api_route("/health/liveness", health([liveness]))
+app.add_api_route("/health/readiness", health([readiness]))
 
 # 질문 API
 @app.post("/api/logs/summary", response_model=QuestionResponse)
@@ -155,7 +148,7 @@ async def embed_codes(request: EmbeddingRequest):
 
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise CustomException(code="5000", message=f"알 수 없는 오류: {str(e)}", status_code=500)
 
 
 async def get_relevant_docs_for_logs(retriever, logs: List[Dict[str, Any]]) -> List[Any]:
