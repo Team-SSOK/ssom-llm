@@ -24,5 +24,9 @@ RUN mkdir -p github_repo
 # 패키지 설치
 RUN pip install --no-cache-dir -r requirements.txt
 
+# 환경 변수 설정
+ARG OPENAI_API_KEY
+ENV OPENAI_API_KEY=${OPENAI_API_KEY}
+
 # 서버 실행
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]
