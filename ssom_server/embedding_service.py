@@ -9,12 +9,8 @@ from langchain.docstore.document import Document
 from langchain_qdrant import QdrantVectorStore
 from langchain_openai import OpenAIEmbeddings
 from logging_utils import logger
-from env_config import (
-    QDRANT_HOST,
-    QDRANT_PORT,
-    COLLECTION_NAME,
-    EMBEDDING_MODEL
-)
+from ssom_server.settings import settings
+
 
 # 깃허브 URL에서 레포 이름 추출
 def get_repo_name(github_url: str) -> str:
@@ -59,22 +55,22 @@ def embed_documents(github_url: str):
     logger.info(f"{len(java_files)}개의 .java 파일을 찾음")
 
     # Qdrant 연결
-    qdrant = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
+    qdrant = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
 
     # 기존 컬렉션 삭제 및 재생성
-    if qdrant.collection_exists(COLLECTION_NAME):
-        qdrant.delete_collection(collection_name=COLLECTION_NAME)
-        logger.info(f"기존 컬렉션 삭제: {COLLECTION_NAME}")
+    if qdrant.collection_exists(settings.collection_name):
+        qdrant.delete_collection(collection_name=settings.collection_name)
+        logger.info(f"기존 컬렉션 삭제: {settings.collection_name}")
 
     qdrant.create_collection(
-        collection_name=COLLECTION_NAME,
+        collection_name=settings.collection_name,
         vectors_config=VectorParams(size=1536, distance=Distance.COSINE),
     )
-    logger.info(f"새 컬렉션 생성: {COLLECTION_NAME}")
+    logger.info(f"새 컬렉션 생성: {settings.collection_name}")
 
     # 임베딩 모델 초기화
     embedding_model = OpenAIEmbeddings(
-        model=EMBEDDING_MODEL
+        model=settings.embedding_model
     )
 
     # Document 객체 생성
@@ -91,7 +87,7 @@ def embed_documents(github_url: str):
     vectorstore = QdrantVectorStore(
         client=qdrant,
         embedding=embedding_model,
-        collection_name=COLLECTION_NAME
+        collection_name=settings.collection_name
     )
     vectorstore.add_documents(docs)
 

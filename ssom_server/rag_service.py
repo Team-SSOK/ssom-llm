@@ -1,5 +1,3 @@
-import os
-from dotenv import load_dotenv
 from langchain_qdrant import QdrantVectorStore
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
@@ -9,41 +7,34 @@ from log_summary_prompt import get_prompt_template as get_log_prompt, get_output
 from github_issue_prompt import get_prompt_template as get_github_prompt, get_output_schema as get_github_schema
 
 from logging_utils import logger
-from env_config import (
-    QDRANT_HOST,
-    QDRANT_PORT,
-    COLLECTION_NAME,
-    EMBEDDING_MODEL,
-    RETRIEVER_TOP_K,
-    LLM_MODEL,
-    LLM_TEMPERATURE
-)
+from ssom_server.settings import settings
+
 
 # Qdrant client 연결
-client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
+client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
 
-if not client.collection_exists(COLLECTION_NAME):
+if not client.collection_exists(settings.collection_name):
     from qdrant_client.http.models import VectorParams, Distance
     client.create_collection(
-        collection_name=COLLECTION_NAME,
+        collection_name=settings.collection_name,
         vectors_config=VectorParams(size=1536, distance=Distance.COSINE),
     )
-    logger.info(f"{COLLECTION_NAME} 컬렉션 자동 생성됨")
+    logger.info(f"{settings.collection_name} 컬렉션 자동 생성됨")
 
 # 임베딩 모델
 embedding_model = OpenAIEmbeddings(
-    model=EMBEDDING_MODEL
+    model=settings.embedding_model,
 )
 
 # Qdrant VectorStore
 vectorstore = QdrantVectorStore(
     client=client,
-    collection_name=COLLECTION_NAME,
+    collection_name=settings.collection_name,
     embedding=embedding_model,
 )
 
 # Retriever
-retriever = vectorstore.as_retriever(search_kwargs={"k": RETRIEVER_TOP_K})
+retriever = vectorstore.as_retriever(search_kwargs={"k": settings.retriever_top_k})
 
 def get_chain_and_retriever(prompt_type: str):
     if prompt_type == "log_summary":
@@ -57,8 +48,8 @@ def get_chain_and_retriever(prompt_type: str):
 
     # LLM
     llm = ChatOpenAI(
-        model=LLM_MODEL,
-        temperature=LLM_TEMPERATURE
+        model=settings.llm_model,
+        temperature=settings.llm_temperature,
     ).with_structured_output(output_schema, method="json_mode")
 
     # 입력을 여러 체인(또는 함수)에 병렬로 전달

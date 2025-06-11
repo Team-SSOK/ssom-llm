@@ -1,8 +1,6 @@
 import traceback
 import asyncio
 import json
-import os
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi_health import health
 from pydantic import BaseModel
@@ -12,21 +10,11 @@ from rag_service import get_chain_and_retriever
 from logging_utils import log_relevant_docs, log_llm_prompt
 from exceptions import CustomException, custom_exception_handler
 from typing import List, Dict, Any
+from ssom_server.settings import settings
 
 # FastAPI 앱 생성
 app = FastAPI()
 app.add_exception_handler(CustomException, custom_exception_handler)
-
-# 환경 변수 로드
-load_dotenv()
-
-QDRANT_HOST = os.getenv("QDRANT_HOST")
-QDRANT_PORT = int(os.getenv("QDRANT_PORT", "6333"))
-
-# 필수 값 검증
-if not QDRANT_HOST:
-    raise ValueError("QDRANT_HOST .env에 설정되지 않음")
-
 
 # request 스키마
 class QuestionRequest(BaseModel):
@@ -53,7 +41,7 @@ class EmbeddingResponse(BaseModel):
 # Qdrant 연결 체크 함수
 async def readiness():
     try:
-        client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
+        client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
         client.get_collections()
         return True
     except Exception as e:
