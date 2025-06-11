@@ -14,6 +14,7 @@ COPY log_summary_prompt.py .
 COPY github_issue_prompt.py .
 COPY logging_utils.py .
 COPY exceptions.py .
+COPY env_config.py .
 COPY requirements.txt .
 COPY .env .
 

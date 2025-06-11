@@ -9,27 +9,15 @@ from log_summary_prompt import get_prompt_template as get_log_prompt, get_output
 from github_issue_prompt import get_prompt_template as get_github_prompt, get_output_schema as get_github_schema
 
 from logging_utils import logger
-
-# 환경 변수 로드
-load_dotenv()
-
-# 필수 환경 변수
-OPENAI_API_KEY = str(os.getenv("OPENAI_API_KEY"))
-QDRANT_HOST = os.getenv("QDRANT_HOST")
-QDRANT_PORT = int(os.getenv("QDRANT_PORT", "6333"))
-
-# 필수 값 검증
-if not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY가 .env에 설정되지 않음")
-if not QDRANT_HOST:
-    raise ValueError("QDRANT_HOST .env에 설정되지 않음")
-
-# 모델/설정 관련 환경 변수 로딩
-EMBEDDING_MODEL = str(os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"))
-LLM_MODEL = str(os.getenv("LLM_MODEL", "gpt-4o-mini"))
-LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.2"))
-RETRIEVER_TOP_K = int(os.getenv("RETRIEVER_TOP_K", "3"))
-COLLECTION_NAME = str(os.getenv("COLLECTION_NAME", "java-files"))
+from env_config import (
+    QDRANT_HOST,
+    QDRANT_PORT,
+    COLLECTION_NAME,
+    EMBEDDING_MODEL,
+    RETRIEVER_TOP_K,
+    LLM_MODEL,
+    LLM_TEMPERATURE
+)
 
 # Qdrant client 연결
 client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
